@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import './App.css'
-// Import the background image from assets
 import luxoraBG from './assets/luxorabg.png' 
 
 export default function App() {
   const [products, setProducts] = useState([])
   const [tags, setTags] = useState([])
   const [selectedTag, setSelectedTag] = useState('All')
+  const [selectedItem, setSelectedItem] = useState(null) // State for the popup
 
-  // The Facebook link for orders
   const fbLink = "https://www.facebook.com/jl.gulmatico.2025"
 
   useEffect(() => {
@@ -29,9 +28,8 @@ export default function App() {
 
   return (
     <div 
-      className="app-container" 
+      className={`app-container ${selectedItem ? 'modal-active' : ''}`} 
       style={{ 
-        // This adds a dark tint (60% black) over your image
         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${luxoraBG})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -59,53 +57,65 @@ export default function App() {
       </div>
 
       <div className="products-wrapper">
-        {filteredProducts.length === 0 ? (
-          <p className="empty-state">No items found in this category</p>
-        ) : (
-          <div className="products-grid">
-            {filteredProducts.map(item => (
-              <div key={item.id} className="product-card">
-                <div className="product-image-wrapper">
-                  <img 
-                    src={item.image_url} 
-                    alt={item.name}
-                    className="product-image"
-                  />
-                </div>
-                
-                <div className="product-info">
-                  <h3 className="product-name">{item.name}</h3>
-                  <p className="product-category">{item.category}</p>
-                  <p className="product-description">{item.description}</p>
-                  
-                  {item.sub_tags && Object.entries(item.sub_tags).length > 0 && (
-                    <div className="product-tags">
-                      {Object.entries(item.sub_tags).map(([key, val]) => (
-                        <span key={key} className="product-tag">
-                          {key}: {val}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="product-footer">
-                    <p className="product-price">{item.price}</p>
-                    {/* Updated button to link to Facebook */}
-                    <a 
-                      href={fbLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="view-details-btn"
-                    >
-                      Order
-                    </a>
-                  </div>
+        <div className="products-grid">
+          {filteredProducts.map(item => (
+            <div key={item.id} className="product-card">
+              <div className="product-image-wrapper">
+                <img src={item.image_url} alt={item.name} className="product-image" />
+              </div>
+              
+              {/* Simplified Slide-down: Name, Price, View Button Only */}
+              <div className="product-info">
+                <h3 className="product-name">{item.name}</h3>
+                <p className="product-price-preview">{item.price}</p>
+                <div className="product-footer">
+                  <button className="view-details-btn" onClick={() => setSelectedItem(item)}>
+                    View Item
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* --- MODAL / POPUP SECTION --- */}
+      {selectedItem && (
+        <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setSelectedItem(null)}>×</button>
+            
+            <div className="modal-body">
+              <div className="modal-left">
+                <img src={selectedItem.image_url} alt={selectedItem.name} className="modal-image" />
+              </div>
+              
+              <div className="modal-right">
+                <h2 className="modal-title">{selectedItem.name}</h2>
+                <p className="modal-category-tag">{selectedItem.category}</p>
+                <p className="modal-description">{selectedItem.description}</p>
+                
+                {selectedItem.sub_tags && Object.entries(selectedItem.sub_tags).length > 0 && (
+                  <div className="modal-subtags">
+                    {Object.entries(selectedItem.sub_tags).map(([key, val]) => (
+                      <div key={key} className="modal-subtag-item">
+                        <strong>{key}:</strong> {val}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="modal-footer">
+                  <span className="modal-price">{selectedItem.price}</span>
+                  <a href={fbLink} target="_blank" rel="noreferrer" className="order-btn">
+                    Order via Messenger
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="footer">
         <p className="footer-text">© 2024 Luxora Jewelry. Handcrafted with love.</p>
