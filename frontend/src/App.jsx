@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import './App.css'
-import luxoraBG from './assets/luxorabg.png' 
+import luxoraBG from './assets/luxorabg.png'
 
 export default function App() {
   const [products, setProducts] = useState([])
   const [tags, setTags] = useState([])
   const [selectedTag, setSelectedTag] = useState('All')
-  const [selectedItem, setSelectedItem] = useState(null) // State for the popup
+  const [selectedProduct, setSelectedProduct] = useState(null)
 
-  const fbLink = "https://www.facebook.com/jl.gulmatico.2025"
+  const fbLink = "https://www.facebook.com/share/1aXrTSSkXB/"
 
   useEffect(() => {
     fetchData()
@@ -22,15 +22,23 @@ export default function App() {
     setTags(tagData || [])
   }
 
-  const filteredProducts = selectedTag === 'All' 
-    ? products 
+  const filteredProducts = selectedTag === 'All'
+    ? products
     : products.filter(p => p.category === selectedTag)
 
+  const openPopup = (product) => {
+    setSelectedProduct(product)
+  }
+
+  const closePopup = () => {
+    setSelectedProduct(null)
+  }
+
   return (
-    <div 
-      className={`app-container ${selectedItem ? 'modal-active' : ''}`} 
-      style={{ 
-        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${luxoraBG})`,
+    <div
+      className="app-container"
+      style={{
+        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.03)), url(${luxoraBG})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
@@ -39,13 +47,13 @@ export default function App() {
     >
       <header className="header">
         <h1 className="header-title">Luxora</h1>
-        <p className="header-subtitle">Handcrafted Elegance</p>
+        <p className="header-subtitle">Wear your confidence</p>
       </header>
 
       <div className="filter-container">
         <label className="filter-label">Filter by Category:</label>
-        <select 
-          value={selectedTag} 
+        <select
+          value={selectedTag}
           onChange={(e) => setSelectedTag(e.target.value)}
           className="filter-dropdown"
         >
@@ -57,60 +65,90 @@ export default function App() {
       </div>
 
       <div className="products-wrapper">
-        <div className="products-grid">
-          {filteredProducts.map(item => (
-            <div key={item.id} className="product-card">
-              <div className="product-image-wrapper">
-                <img src={item.image_url} alt={item.name} className="product-image" />
-              </div>
-              
-              {/* Simplified Slide-down: Name, Price, View Button Only */}
-              <div className="product-info">
-                <h3 className="product-name">{item.name}</h3>
-                <p className="product-price-preview">{item.price}</p>
-                <div className="product-footer">
-                  <button className="view-details-btn" onClick={() => setSelectedItem(item)}>
-                    View Item
-                  </button>
+        {filteredProducts.length === 0 ? (
+          <p className="empty-state">No items found in this category</p>
+        ) : (
+          <div className="products-grid">
+            {filteredProducts.map(item => (
+              <div key={item.id} className="product-card">
+                <div className="product-image-wrapper">
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="product-image"
+                  />
+                </div>
+
+                <div className="product-info">
+                  <h3 className="product-name">{item.name}</h3>
+                  <div className="product-footer">
+                    <p className="product-price">₱{item.price}</p>
+                    <button
+                      onClick={() => openPopup(item)}
+                      className="view-details-btn"
+                    >
+                      View
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* --- MODAL / POPUP SECTION --- */}
-      {selectedItem && (
-        <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setSelectedItem(null)}>×</button>
+      {/* Popup Modal */}
+      {selectedProduct && (
+        <div className="popup-overlay" onClick={closePopup}>
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+            <button className="popup-close" onClick={closePopup}>×</button>
             
-            <div className="modal-body">
-              <div className="modal-left">
-                <img src={selectedItem.image_url} alt={selectedItem.name} className="modal-image" />
+            <div className="popup-grid">
+              <div className="popup-image-section">
+                <img
+                  src={selectedProduct.image_url}
+                  alt={selectedProduct.name}
+                  className="popup-image"
+                />
               </div>
-              
-              <div className="modal-right">
-                <h2 className="modal-title">{selectedItem.name}</h2>
-                <p className="modal-category-tag">{selectedItem.category}</p>
-                <p className="modal-description">{selectedItem.description}</p>
+
+              <div className="popup-details-section">
+                <h2 className="popup-title">{selectedProduct.name}</h2>
+                <p className="popup-category">{selectedProduct.category}</p>
                 
-                {selectedItem.sub_tags && Object.entries(selectedItem.sub_tags).length > 0 && (
-                  <div className="modal-subtags">
-                    {Object.entries(selectedItem.sub_tags).map(([key, val]) => (
-                      <div key={key} className="modal-subtag-item">
-                        <strong>{key}:</strong> {val}
-                      </div>
-                    ))}
+                <div className="popup-price-section">
+                  <span className="popup-price">₱{selectedProduct.price}</span>
+                </div>
+
+                {selectedProduct.description && (
+                  <div className="popup-description-section">
+                    <h3 className="popup-section-title">Description</h3>
+                    <p className="popup-description">{selectedProduct.description}</p>
                   </div>
                 )}
-                
-                <div className="modal-footer">
-                  <span className="modal-price">{selectedItem.price}</span>
-                  <a href={fbLink} target="_blank" rel="noreferrer" className="order-btn">
-                    Order via Messenger
-                  </a>
-                </div>
+
+                {selectedProduct.sub_tags && Object.entries(selectedProduct.sub_tags).length > 0 && (
+                  <div className="popup-tags-section">
+                    <h3 className="popup-section-title">Details</h3>
+                    <div className="popup-tags">
+                      {Object.entries(selectedProduct.sub_tags).map(([key, val]) => (
+                        <div key={key} className="popup-tag-item">
+                          <span className="popup-tag-key">{key}</span>
+                          <span className="popup-tag-value">Code: {val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <a
+                  href={fbLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="popup-order-btn"
+                >
+                  Order on Facebook
+                </a>
               </div>
             </div>
           </div>
@@ -118,7 +156,7 @@ export default function App() {
       )}
 
       <footer className="footer">
-        <p className="footer-text">© 2024 Luxora Jewelry. Handcrafted with love.</p>
+        <p className="footer-text">© 2024 Luxora Jewelry. Wear your confidence.</p>
       </footer>
     </div>
   )
