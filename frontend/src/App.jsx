@@ -7,6 +7,7 @@ export default function App() {
   const [products, setProducts] = useState([])
   const [tags, setTags] = useState([])
   const [selectedTag, setSelectedTag] = useState('All')
+  const [searchQuery, setSearchQuery] = useState('') // New state for search
   const [selectedProduct, setSelectedProduct] = useState(null)
 
   const fbLink = "https://www.facebook.com/share/1aXrTSSkXB/"
@@ -22,9 +23,12 @@ export default function App() {
     setTags(tagData || [])
   }
 
-  const filteredProducts = selectedTag === 'All'
-    ? products
-    : products.filter(p => p.category === selectedTag)
+  // Combined logic: Filters by category AND search text
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = selectedTag === 'All' || p.category === selectedTag;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  })
 
   const openPopup = (product) => {
     setSelectedProduct(product)
@@ -47,26 +51,39 @@ export default function App() {
     >
       <header className="header">
         <h1 className="header-title">Luxora</h1>
-        <p className="header-subtitle">Wear your confidence</p>
+        <p className="header-subtitle">Affordable elegance for every you.</p>
       </header>
 
       <div className="filter-container">
-        <label className="filter-label">Filter by Category:</label>
-        <select
-          value={selectedTag}
-          onChange={(e) => setSelectedTag(e.target.value)}
-          className="filter-dropdown"
-        >
-          <option value="All">All Collections</option>
-          {tags.map(t => (
-            <option key={t.id} value={t.name}>{t.name}</option>
-          ))}
-        </select>
+        <div className="filter-group">
+          <label className="filter-label">Category:</label>
+          <select
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="filter-dropdown"
+          >
+            <option value="All">All Collections</option>
+            {tags.map(t => (
+              <option key={t.id} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label className="filter-label">Search:</label>
+          <input
+            type="text"
+            placeholder="Search jewelry..."
+            className="filter-dropdown"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="products-wrapper">
         {filteredProducts.length === 0 ? (
-          <p className="empty-state">No items found in this category</p>
+          <p className="empty-state">No items found matching your criteria</p>
         ) : (
           <div className="products-grid">
             {filteredProducts.map(item => (
@@ -122,14 +139,14 @@ export default function App() {
 
                 {selectedProduct.description && (
                   <div className="popup-description-section">
-                    <h3 className="popup-section-title">Description</h3>
+                    <h3 className="popup-section-title" style={{color: '#d4a574', marginBottom: '10px'}}>Description</h3>
                     <p className="popup-description">{selectedProduct.description}</p>
                   </div>
                 )}
 
                 {selectedProduct.sub_tags && Object.entries(selectedProduct.sub_tags).length > 0 && (
                   <div className="popup-tags-section">
-                    <h3 className="popup-section-title">Details</h3>
+                    <h3 className="popup-section-title" style={{color: '#d4a574', marginBottom: '10px'}}>Details</h3>
                     <div className="popup-tags">
                       {Object.entries(selectedProduct.sub_tags).map(([key, val]) => (
                         <div key={key} className="popup-tag-item">
@@ -156,7 +173,7 @@ export default function App() {
       )}
 
       <footer className="footer">
-        <p className="footer-text">© 2024 Luxora Jewelry. Wear your confidence.</p>
+        <p className="footer-text">© 2024 Luxora Jewelry.  Affordable elegance for every you.</p>
       </footer>
     </div>
   )
