@@ -35,7 +35,6 @@ export default function Admin() {
     setTags(data || [])
   }
 
-  // Real-time Search Logic
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -77,19 +76,48 @@ export default function Admin() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const processImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.width !== img.height) {
+          return reject(new Error(`Validation Failed: Image must be a perfect square (1:1). Current dimensions: ${img.width}x${img.height}.`));
+        }
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const targetSize = Math.min(img.width, 1000);
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+        ctx.drawImage(img, 0, 0, targetSize, targetSize);
+        canvas.toBlob((blob) => {
+          if (!blob) return reject(new Error("Image compression failed."));
+          resolve(blob);
+        }, 'image/jpeg', 0.7);
+      };
+      img.onerror = () => reject(new Error("Could not load image file."));
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     const form = e.target
     const file = form.image.files[0]
+    const isSoldValue = form.isSold ? form.isSold.checked : false
     const subTags = form.subTagKey.value ? { [form.subTagKey.value]: form.subTagValue.value } : {}
 
     try {
       let finalImageUrl = editingItem?.image_url || ''
 
       if (file) {
-        const fileName = `${Date.now()}-${file.name}`
-        const { error: storageError } = await supabase.storage.from('jewelry').upload(fileName, file)
+        const compressedBlob = await processImage(file);
+        const fileName = `${Date.now()}-jewelry.jpg`
+        const { error: storageError } = await supabase.storage
+          .from('jewelry')
+          .upload(fileName, compressedBlob, { contentType: 'image/jpeg' })
         if (storageError) throw storageError
         const { data: urlData } = supabase.storage.from('jewelry').getPublicUrl(fileName)
         finalImageUrl = urlData.publicUrl
@@ -101,7 +129,8 @@ export default function Admin() {
         description: form.description.value,
         category: form.category.value,
         sub_tags: subTags,
-        image_url: finalImageUrl
+        image_url: finalImageUrl,
+        is_sold: isSoldValue // New field
       }
 
       if (editingItem) {
@@ -118,7 +147,7 @@ export default function Admin() {
       form.reset()
       fetchItems()
     } catch (err) {
-      alert("Operation failed: " + err.message)
+      alert(err.message)
     } finally {
       setLoading(false)
     }
@@ -139,13 +168,12 @@ export default function Admin() {
     }
   }
 
-  // --- STYLE CONSTANTS FOR CONSISTENCY ---
   const inputStyle = {
     padding: '12px',
     borderRadius: '8px',
     border: '1px solid #ddd',
     fontSize: '1rem',
-    fontFamily: '"Playfair Display", serif', // Matches brand font
+    fontFamily: '"Playfair Display", serif',
     width: '100%',
     boxSizing: 'border-box'
   }
@@ -174,8 +202,6 @@ export default function Admin() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-        
-        {/* LEFT COLUMN: Categories & Forms */}
         <div>
           <section style={{ background: '#f9f9f9', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #eee' }}>
             <h3>Categories</h3>
@@ -194,8 +220,19 @@ export default function Admin() {
 
           <form key={editingItem ? editingItem.id : 'new'} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', background: editingItem ? '#fffef0' : '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #d4a574' }}>
             <h3>{editingItem ? 'Edit Listing' : 'Add New Item'}</h3>
+            
+            {/* SOLD TOGGLE - ONLY SHOWS WHEN EDITING */}
+            {editingItem && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#d9534f', fontWeight: 'bold', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #d9534f' }}>
+                <input type="checkbox" name="isSold" defaultChecked={editingItem.is_sold} style={{ transform: 'scale(1.5)' }} />
+                MARK AS SOLD
+              </label>
+            )}
+
+            <p style={{ fontSize: '0.8rem', color: '#888', margin: 0 }}>* Photos must be square (1:1 aspect ratio)</p>
+            
             <input name="name" defaultValue={editingItem?.name || ''} placeholder="Jewelry Name" required style={inputStyle} />
-            <input name="price" defaultValue={editingItem?.price || ''} placeholder="Price (e.g. P1,200)" required style={inputStyle} />
+            <input name="price" defaultValue={editingItem?.price || ''} placeholder="Price (e.g. 1,200)" required style={inputStyle} />
             <textarea name="description" defaultValue={editingItem?.description || ''} placeholder="Description..." style={{ ...inputStyle, minHeight: '80px' }} />
             
             <select name="category" defaultValue={editingItem?.category || 'Uncategorized'} style={inputStyle}>
@@ -208,16 +245,15 @@ export default function Admin() {
               <input name="subTagValue" defaultValue={editingItem?.sub_tags ? Object.values(editingItem.sub_tags)[0] : ''} placeholder="Value (7)" style={inputStyle} />
             </div>
 
-            <input type="file" name="image" required={!editingItem} style={{ fontFamily: 'sans-serif' }} />
+            <input type="file" name="image" accept="image/*" required={!editingItem} style={{ fontFamily: 'sans-serif' }} />
             
             <button type="submit" disabled={loading} style={{ padding: '15px', background: '#d4a574', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-              {loading ? "Saving..." : editingItem ? "Update Listing" : "Upload to Shop"}
+              {loading ? "Processing..." : editingItem ? "Update Listing" : "Upload to Shop"}
             </button>
             {editingItem && <button type="button" onClick={() => setEditingItem(null)} style={{ background: 'none', color: '#666', border: 'none', cursor: 'pointer' }}>Cancel Edit</button>}
           </form>
         </div>
 
-        {/* RIGHT COLUMN: Search & Inventory */}
         <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #eee' }}>
           <div style={{ marginBottom: '20px' }}>
             <h3>Inventory</h3>
@@ -232,10 +268,12 @@ export default function Admin() {
 
           <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
             {filteredProducts.map(p => (
-              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderBottom: '1px solid #f0f0f0' }}>
+              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderBottom: '1px solid #f0f0f0', opacity: p.is_sold ? 0.5 : 1 }}>
                 <div>
-                  <div style={{ fontWeight: 'bold' }}>{p.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#888' }}>{p.category} • {p.price}</div>
+                  <div style={{ fontWeight: 'bold' }}>
+                    {p.name} {p.is_sold && <span style={{ color: 'red', fontSize: '0.7rem' }}>[SOLD]</span>}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#888' }}>{p.category} • ₱{p.price}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '5px' }}>
                   <button onClick={() => startEditing(p)} style={{ border: 'none', color: '#d4a574', cursor: 'pointer', background: 'none' }}>Edit</button>
@@ -246,7 +284,6 @@ export default function Admin() {
             {filteredProducts.length === 0 && <p style={{ color: '#999', textAlign: 'center' }}>No items found.</p>}
           </div>
         </div>
-
       </div>
     </div>
   )

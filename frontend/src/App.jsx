@@ -7,7 +7,7 @@ export default function App() {
   const [products, setProducts] = useState([])
   const [tags, setTags] = useState([])
   const [selectedTag, setSelectedTag] = useState('All')
-  const [searchQuery, setSearchQuery] = useState('') // New state for search
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState(null)
 
   const fbLink = "https://www.facebook.com/share/1aXrTSSkXB/"
@@ -23,7 +23,6 @@ export default function App() {
     setTags(tagData || [])
   }
 
-  // Combined logic: Filters by category AND search text
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedTag === 'All' || p.category === selectedTag;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -87,8 +86,25 @@ export default function App() {
         ) : (
           <div className="products-grid">
             {filteredProducts.map(item => (
-              <div key={item.id} className="product-card">
-                <div className="product-image-wrapper">
+              <div key={item.id} className="product-card" style={{position: 'relative'}}>
+                {/* SOLD OVERLAY FOR CARD */}
+                {item.is_sold && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '15px',
+                    right: '15px',
+                    background: 'rgba(217, 83, 79, 0.9)',
+                    color: 'white',
+                    padding: '5px 15px',
+                    borderRadius: '5px',
+                    zIndex: 10,
+                    fontWeight: 'bold',
+                    fontSize: '0.8rem',
+                    letterSpacing: '1px'
+                  }}>SOLD</div>
+                )}
+                
+                <div className="product-image-wrapper" style={{ opacity: item.is_sold ? 0.6 : 1 }}>
                   <img
                     src={item.image_url}
                     alt={item.name}
@@ -114,7 +130,6 @@ export default function App() {
         )}
       </div>
 
-      {/* Popup Modal */}
       {selectedProduct && (
         <div className="popup-overlay" onClick={closePopup}>
           <div className="popup-content" onClick={(e) => e.stopPropagation()}>
@@ -126,11 +141,15 @@ export default function App() {
                   src={selectedProduct.image_url}
                   alt={selectedProduct.name}
                   className="popup-image"
+                  style={{ filter: selectedProduct.is_sold ? 'grayscale(0.5)' : 'none' }}
                 />
               </div>
 
               <div className="popup-details-section">
-                <h2 className="popup-title">{selectedProduct.name}</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <h2 className="popup-title">{selectedProduct.name}</h2>
+                  {selectedProduct.is_sold && <span style={{color: '#d9534f', fontWeight: 'bold'}}>OUT OF STOCK</span>}
+                </div>
                 <p className="popup-category">{selectedProduct.category}</p>
                 
                 <div className="popup-price-section">
@@ -158,14 +177,21 @@ export default function App() {
                   </div>
                 )}
 
-                <a
-                  href={fbLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="popup-order-btn"
-                >
-                  Order on Facebook
-                </a>
+                {/* CONDITIONAL ORDER BUTTON */}
+                {!selectedProduct.is_sold ? (
+                  <a
+                    href={fbLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="popup-order-btn"
+                  >
+                    Order on Facebook
+                  </a>
+                ) : (
+                  <div className="popup-order-btn" style={{ background: '#555', cursor: 'not-allowed', transform: 'none', opacity: 0.7 }}>
+                    Item Unavailable
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -173,7 +199,7 @@ export default function App() {
       )}
 
       <footer className="footer">
-        <p className="footer-text">© 2024 Luxora Jewelry.  Affordable elegance for every you.</p>
+        <p className="footer-text">© 2024 Luxora Jewelry. Affordable elegance for every you.</p>
       </footer>
     </div>
   )
