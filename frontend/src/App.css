@@ -370,7 +370,6 @@ body {
 @media (max-width: 850px) {
   .popup-grid { grid-template-columns: 1fr; padding: 25px; }
   .product-card { height: 350px; }
-  .header-title { font-size: 2.5rem; letter-spacing: 6px; }
   .filter-container { gap: 15px; }
   .filter-dropdown { min-width: 100%; }
   .filter-group { width: 100%; flex-direction: column; align-items: flex-start; }
