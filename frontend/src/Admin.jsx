@@ -6,18 +6,17 @@ export default function Admin() {
   const [products, setProducts] = useState([])
   const [session, setSession] = useState(null)
   
-  // Search & Filtering
   const [searchTerm, setSearchTerm] = useState('')
   const [tags, setTags] = useState([])
   const [newTagName, setNewTagName] = useState('')
-
-  // Edit State
   const [editingItem, setEditingItem] = useState(null)
 
-  // Login States
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+
+  // Use a reliable placeholder for sold items to save storage
+  const SOLD_PLACEHOLDER = "https://placehold.co/400x400/1a1a1a/d4a574?text=SOLD"
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
@@ -84,7 +83,7 @@ export default function Admin() {
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
         if (img.width !== img.height) {
-          return reject(new Error(`Validation Failed: Image must be a perfect square (1:1). Current dimensions: ${img.width}x${img.height}.`));
+          return reject(new Error(`Validation Failed: Image must be a perfect square (1:1).`));
         }
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -112,7 +111,8 @@ export default function Admin() {
     try {
       let finalImageUrl = editingItem?.image_url || ''
 
-      if (file) {
+      // 1. Handle Image Logic
+      if (file && !isSoldValue) {
         const compressedBlob = await processImage(file);
         const fileName = `${Date.now()}-jewelry.jpg`
         const { error: storageError } = await supabase.storage
@@ -123,6 +123,13 @@ export default function Admin() {
         finalImageUrl = urlData.publicUrl
       }
 
+      // 2. Storage Cleanup: If marked as Sold, delete the existing file
+      if (isSoldValue && editingItem?.image_url && !editingItem.image_url.includes('placehold.co')) {
+        const oldFileName = editingItem.image_url.split('/').pop()
+        await supabase.storage.from('jewelry').remove([oldFileName])
+        finalImageUrl = SOLD_PLACEHOLDER
+      }
+
       const itemData = {
         name: form.name.value,
         price: form.price.value,
@@ -130,13 +137,13 @@ export default function Admin() {
         category: form.category.value,
         sub_tags: subTags,
         image_url: finalImageUrl,
-        is_sold: isSoldValue // New field
+        is_sold: isSoldValue 
       }
 
       if (editingItem) {
         const { error } = await supabase.from('Items').update(itemData).eq('id', editingItem.id)
         if (error) throw error
-        alert("Listing updated!")
+        alert(isSoldValue ? "Item Sold & Image Purged!" : "Listing updated!")
       } else {
         const { error } = await supabase.from('Items').insert([itemData])
         if (error) throw error
@@ -156,7 +163,7 @@ export default function Admin() {
   const handleDelete = async (item) => {
     if (window.confirm(`Delete ${item.name}?`)) {
       try {
-        if (item.image_url) {
+        if (item.image_url && !item.image_url.includes('placehold.co')) {
           const fileName = item.image_url.split('/').pop()
           await supabase.storage.from('jewelry').remove([fileName])
         }
@@ -169,13 +176,8 @@ export default function Admin() {
   }
 
   const inputStyle = {
-    padding: '12px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
-    fontSize: '1rem',
-    fontFamily: '"Playfair Display", serif',
-    width: '100%',
-    boxSizing: 'border-box'
+    padding: '12px', borderRadius: '8px', border: '1px solid #ddd',
+    fontSize: '1rem', fontFamily: '"Playfair Display", serif', width: '100%', boxSizing: 'border-box'
   }
 
   if (!session) {
@@ -221,18 +223,15 @@ export default function Admin() {
           <form key={editingItem ? editingItem.id : 'new'} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', background: editingItem ? '#fffef0' : '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #d4a574' }}>
             <h3>{editingItem ? 'Edit Listing' : 'Add New Item'}</h3>
             
-            {/* SOLD TOGGLE - ONLY SHOWS WHEN EDITING */}
             {editingItem && (
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#d9534f', fontWeight: 'bold', background: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #d9534f' }}>
                 <input type="checkbox" name="isSold" defaultChecked={editingItem.is_sold} style={{ transform: 'scale(1.5)' }} />
-                MARK AS SOLD
+                MARK AS SOLD (Deletes Photo)
               </label>
             )}
 
-            <p style={{ fontSize: '0.8rem', color: '#888', margin: 0 }}>* Photos must be square (1:1 aspect ratio)</p>
-            
             <input name="name" defaultValue={editingItem?.name || ''} placeholder="Jewelry Name" required style={inputStyle} />
-            <input name="price" defaultValue={editingItem?.price || ''} placeholder="Price (e.g. 1,200)" required style={inputStyle} />
+            <input name="price" defaultValue={editingItem?.price || ''} placeholder="Price" required style={inputStyle} />
             <textarea name="description" defaultValue={editingItem?.description || ''} placeholder="Description..." style={{ ...inputStyle, minHeight: '80px' }} />
             
             <select name="category" defaultValue={editingItem?.category || 'Uncategorized'} style={inputStyle}>
@@ -241,38 +240,26 @@ export default function Admin() {
             </select>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <input name="subTagKey" defaultValue={editingItem?.sub_tags ? Object.keys(editingItem.sub_tags)[0] : ''} placeholder="Label (Size)" style={inputStyle} />
-              <input name="subTagValue" defaultValue={editingItem?.sub_tags ? Object.values(editingItem.sub_tags)[0] : ''} placeholder="Value (7)" style={inputStyle} />
+              <input name="subTagKey" defaultValue={editingItem?.sub_tags ? Object.keys(editingItem.sub_tags)[0] : ''} placeholder="Label" style={inputStyle} />
+              <input name="subTagValue" defaultValue={editingItem?.sub_tags ? Object.values(editingItem.sub_tags)[0] : ''} placeholder="Value" style={inputStyle} />
             </div>
 
             <input type="file" name="image" accept="image/*" required={!editingItem} style={{ fontFamily: 'sans-serif' }} />
             
             <button type="submit" disabled={loading} style={{ padding: '15px', background: '#d4a574', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-              {loading ? "Processing..." : editingItem ? "Update Listing" : "Upload to Shop"}
+              {loading ? "Syncing..." : editingItem ? "Update Listing" : "Upload to Shop"}
             </button>
             {editingItem && <button type="button" onClick={() => setEditingItem(null)} style={{ background: 'none', color: '#666', border: 'none', cursor: 'pointer' }}>Cancel Edit</button>}
           </form>
         </div>
 
         <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #eee' }}>
-          <div style={{ marginBottom: '20px' }}>
-            <h3>Inventory</h3>
-            <input 
-              type="text" 
-              placeholder="Search by name..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ ...inputStyle, background: '#f0f0f0', border: 'none' }} 
-            />
-          </div>
-
+          <h3>Inventory</h3>
           <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
             {filteredProducts.map(p => (
               <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', borderBottom: '1px solid #f0f0f0', opacity: p.is_sold ? 0.5 : 1 }}>
                 <div>
-                  <div style={{ fontWeight: 'bold' }}>
-                    {p.name} {p.is_sold && <span style={{ color: 'red', fontSize: '0.7rem' }}>[SOLD]</span>}
-                  </div>
+                  <div style={{ fontWeight: 'bold' }}>{p.name} {p.is_sold && <span style={{ color: 'red' }}>[SOLD]</span>}</div>
                   <div style={{ fontSize: '0.8rem', color: '#888' }}>{p.category} • ₱{p.price}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '5px' }}>
@@ -281,7 +268,6 @@ export default function Admin() {
                 </div>
               </div>
             ))}
-            {filteredProducts.length === 0 && <p style={{ color: '#999', textAlign: 'center' }}>No items found.</p>}
           </div>
         </div>
       </div>
