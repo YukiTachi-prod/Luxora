@@ -50,10 +50,13 @@ export default function App() {
         minHeight: '100vh'
       }}
     >
-      <header className="header">
-        <h1 className="header-title" style={{ cursor: 'pointer' }} onClick={() => setViewMode('categories')}>Luxora</h1>
-        <p className="header-subtitle">Affordable elegance for every you.</p>
-      </header>
+    <header className="header">
+      <h1 className="header-title" style={{ cursor: 'pointer' }} onClick={() => setViewMode('categories')}>
+        <span className="title-main">Luxora</span>
+        <span className="title-sub"> Collection</span>
+      </h1>
+      <p className="header-subtitle">Affordable elegance for every you.</p>
+    </header>
 
       <div className="filter-container" style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
         {viewMode === 'products' && (
@@ -188,7 +191,33 @@ export default function App() {
       )}
 
       <footer className="footer">
-        <p className="footer-text">© 2024 Luxora Jewelry. Affordable elegance for every you.</p>
+        <div className="footer-content">
+          <p className="footer-text">© 2026 Luxora Jewelry. Affordable elegance for every you.</p>
+          
+          <div className="contact-stack">
+            <p>Contact us at:</p>
+            <span className="contact-item">
+              Email:
+              <a href="mailto:kewl_gem@yahoo.com">kewl_gem@yahoo.com</a>
+            </span>
+            
+            <span className="contact-item">
+              Phone:
+              <a href="tel:+639568633632">0956 863 3632</a>
+            </span>
+            
+            <span className="contact-item">
+              Facebook:
+              <a 
+                href="https://www.facebook.com/superspecialsweetsurprise" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                Luxora Collection
+              </a>
+            </span>
+          </div>
+        </div>
       </footer>
     </div>
   )
