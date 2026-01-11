@@ -58,7 +58,7 @@ body {
 .title-sub {
   display: block;
   color: #feead3;
-  font-family: sans-serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 3rem;
   font-weight: 400;
   text-transform: uppercase;
