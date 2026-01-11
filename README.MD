@@ -10,7 +10,7 @@ A dynamic digital catalog and storefront for **Luxora Jewelry**. This applicatio
 
 > **Tagline:** Affordable elegance for every you.
 
-## ⚡ Features
+## Features
 
 * **Dynamic Product Catalog:** Fetches real-time product data from Supabase.
 * **Category Filtering:** Browse items by specific collections (tags) or view all items.
@@ -19,7 +19,7 @@ A dynamic digital catalog and storefront for **Luxora Jewelry**. This applicatio
 * **Inventory Status:** Automatically flags items as "SOLD" and disables the order button.
 * **Direct-to-Social Ordering:** "Order on Facebook" button redirects customers to the business page.
 
-## 🧠 Navigation & UI Logic
+## Navigation & UI Logic
 
 The application functions as a Single Page Application (SPA) using React State to handle views without page reloads.
 
@@ -42,39 +42,7 @@ The interface toggles between two primary states:
 * **Search Bar:**
     * **Logic:** As soon as the user begins typing, the app automatically detects input and forces `setViewMode('products')` to show real-time search results across the inventory.
 
-## 🚀 Getting Started
-
-### Prerequisites
-* Node.js (v16+)
-* npm or yarn
-* A Supabase project
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/yourusername/luxora-collection.git](https://github.com/yourusername/luxora-collection.git)
-    cd luxora-collection
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Setup:**
-    Create a `.env` file in the root directory and add your Supabase credentials:
-    ```env
-    VITE_SUPABASE_URL=your_supabase_url
-    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-    ```
-
-4.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-
-## 🗄️ Database Schema (Supabase)
+## Database Schema (Supabase)
 
 To make the app work, create the following tables in your Supabase project.
 
@@ -101,8 +69,9 @@ Stores the categories shown on the home view.
 | `name` | `text` | Category name (e.g., "Necklaces") |
 | `image_url` | `text` | Thumbnail for the category card |
 
-Contact & Support
-Email: gulmaticojaceylorenz@gmail.com
-Phone: 09942157325
+## Contact Information
 
+```text
+Email: gulmaticojaceylorenz@gmail.com
+Contact: 09942157325
 
