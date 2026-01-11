@@ -239,10 +239,10 @@ body {
   padding: 10px 20px;
   border-radius: 25px;
   cursor: pointer;
-  font-size: 1.1rem; /* Adjusted from 1.5 for better balance */
+  font-size: 1rem; 
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(212, 165, 116, 0.3);
+  box-shadow: 0 4px 5px rgba(212, 165, 116, 0.3);
 }
 
 .view-details-btn:hover {
@@ -382,11 +382,12 @@ body {
 /* --- Layout Structure --- */
 .contact-stack {
   display: flex;
-  flex-direction: column; /* This forces the vertical stacking */
-  align-items: center;    /* Keeps the items centered in the column */
-  gap: 10px;              /* Adds breathing room between the rows */
-  margin-top: 25px;       /* Pushes the contact info away from the copyright text */
-}
+  flex-direction: column; 
+  align-items: left;    
+  text-align: left;
+  gap: 4px;              
+  margin-top: 25px;     
+}  
 
 /* --- Item Styling --- */
 .contact-item {
