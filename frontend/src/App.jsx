@@ -32,7 +32,21 @@ export default function App() {
 
   const filteredProducts = products.filter(p => {
     const matchesCategory = selectedTag === 'All' || p.category === selectedTag;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const query = searchQuery.toLowerCase();
+    const matchesName = p.name.toLowerCase().includes(query);
+    const matchesDescription = p.description?.toLowerCase().includes(query) || false;
+    
+    // Search in sub_tags (size values)
+    let matchesSize = false;
+    if (p.sub_tags && typeof p.sub_tags === 'object') {
+      matchesSize = Object.values(p.sub_tags).some(val => 
+        String(val).toLowerCase().includes(query)
+      );
+    }
+    
+    const matchesSearch = matchesName || matchesDescription || matchesSize;
+    
     return matchesCategory && matchesSearch;
   })
 
@@ -118,9 +132,21 @@ export default function App() {
         ) : (
           /* Items View */
           <>
-            <h2 style={{ textAlign: 'center', color: '#d4a574', marginBottom: '30px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: '30px' 
+            }}>
+              <h2 style={{ 
+                color: '#d4a574', 
+                background: '#333',
+                padding: '12px 30px',
+                borderRadius: '12px',
+                margin: 0
+              }}>
                 {selectedTag === 'All' ? 'Full Collection' : selectedTag}
-            </h2>
+              </h2>
+            </div>
             {filteredProducts.length === 0 ? (
               <p className="empty-state">No items found matching your search</p>
             ) : (
@@ -149,8 +175,32 @@ export default function App() {
       </div>
 
       {selectedProduct && (
-        <div className="popup-overlay" onClick={closePopup}>
-          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="popup-overlay" 
+          onClick={closePopup}
+          style={{
+            backgroundImage: `url(${luxoraBG})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <div 
+            style={{
+              position: 'fixed',
+              top: -10,
+              left: -10,
+              right: -10,
+              bottom: -10,
+              backgroundImage: `url(${luxoraBG})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'blur(5px)',
+              zIndex: 0,
+              overflow: 'hidden'
+            }}
+          ></div>
+          <div className="popup-content" onClick={(e) => e.stopPropagation()} style={{ position: 'relative', zIndex: 1 }}>
             <button className="popup-close" onClick={closePopup}>×</button>
             <div className="popup-grid">
               <div className="popup-image-section">
@@ -174,7 +224,7 @@ export default function App() {
                     <h3 className="popup-section-title" style={{color: '#d4a574', marginBottom: '10px'}}>Details</h3>
                     <div className="popup-tags">
                       {Object.entries(selectedProduct.sub_tags).map(([key, val]) => (
-                        <div key={key} className="popup-tag-item"><span className="popup-tag-key">{key}</span><span className="popup-tag-value">Code: {val}</span></div>
+                        <div key={key} className="popup-tag-item"><span className="popup-tag-key">{key}</span><span className="popup-tag-value">Size: {val}</span></div>
                       ))}
                     </div>
                   </div>
